@@ -1,0 +1,17 @@
+{
+  "domain": "jablotron_rs485",
+  "name": "Jablotron",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/jablotron",
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [
+    "http"
+  ],
+  "codeowners": [
+    "@asterix11"
+  ],
+  "requirements": [],
+  "iot_class": "cloud_push"
+}

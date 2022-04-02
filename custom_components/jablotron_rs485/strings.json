@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Jablotron",
+        "description": "Connect your Jablotron System using an RS485-Terminal-IP-Gateway.",
+        "data": {
+          "host": "Host/IP",
+          "port": "Port number",
+          "pin": "User PIN"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]",
+      "already_in_progress": "[%key:common::config_flow::abort::already_in_progress%]"
+    },
+    "create_entry": {
+      "default": "[%key:common::config_flow::create_entry::authenticated%]"
+    }
+  }
+}

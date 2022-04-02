@@ -1,0 +1,23 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Jablotron integration is already configured for this email. Access token has been refreshed."
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host/IP",
+                    "port": "Port number",
+                    "pin": "User PIN"
+                },
+                "description": "Connect using the Host/IP and port.",
+                "title": "Connect to Jablotron"
+            }
+        }
+    }
+}

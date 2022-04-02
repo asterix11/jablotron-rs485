@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "jablotron_rs485"
+version = "1.0.0"
+description = "Jablotron RS485 Home Assistant Integration"
+authors = ["Asterix11 <github@local.host>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/asterix11/jablotron-rs485"
+repository = "https://github.com/asterix11/jablotron-rs485.git"
+keywords = ["Jablotron", "RS485", "HASS", "Home Assistant"]
+classifiers =[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+    ]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+
+[tool.poetry.dev-dependencies]
+homeassistant = "^2021.11.0"
+sp110e = "^1.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.semantic_release]
+remove_dist = "false"
+branch = "main"
+version_toml = "pyproject.toml:tool.poetry.version"
+version_pattern = 'custom_components/jablotron_rs485/manifest.json:\"version\": "(\d+\.\d+\.\d+)"'
+upload_to_release = false
+upload_to_pypi = false
+build_command = false

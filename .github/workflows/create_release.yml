@@ -1,0 +1,37 @@
+name: 🚀 Create release
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - custom_components/**
+            - pyproject.toml
+            - .github/**
+
+jobs:
+    create_release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: ⚙️ Setup Python
+              uses: actions/setup-python@v2
+              with:
+                  python-version: 3.9
+
+            - name: 🔃 Checkout code
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+
+            - name: ✅ Hassfest validation
+              uses: home-assistant/actions/hassfest@master
+
+            - name: ✅ HACS validation
+              uses: hacs/action@main
+              with:
+                  category: integration
+
+            - name: 📢 Semantic Release
+              uses: relekang/python-semantic-release@master
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}

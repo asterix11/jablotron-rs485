@@ -1,0 +1,6 @@
+{
+  "name": "Jablotron RS485",
+  "domains": ["switch"],
+  "homeassistant": "2021.11.0",
+  "render_readme": true
+}
