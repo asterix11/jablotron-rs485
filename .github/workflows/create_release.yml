@@ -30,6 +30,8 @@ jobs:
               uses: hacs/action@main
               with:
                   category: integration
+                  ignore:
+                    - brands
 
             - name: 📢 Semantic Release
               uses: relekang/python-semantic-release@master
