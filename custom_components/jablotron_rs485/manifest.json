@@ -1,5 +1,6 @@
 {
   "domain": "jablotron_rs485",
+  "version": "1.0.1",
   "name": "Jablotron",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/jablotron",
