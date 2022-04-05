@@ -6,6 +6,7 @@ from collections.abc import Sequence
 import logging
 import colorsys
 import asyncio
+import threading
 
 from homeassistant.components.switch import (
     SwitchEntity
@@ -18,9 +19,22 @@ from homeassistant.helpers import (
 from homeassistant.util import Throttle
 from datetime import timedelta
 
-from .api import JablotronRS485TerminalAPI
-from .const import ATTR_DEVICE_TYPE_SWITCH, DOMAIN
+from telnetlib import Telnet
 
+import time
+
+from .const import (
+    ATTR_DEVICE_TYPE_SWITCH,
+    DOMAIN,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_PIN,
+    CONF_PGCOUNT,
+    CMD_PGSTATE,
+    CMD_PGON,
+    CMD_PGOFF,
+    OBJ_PG
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,14 +47,16 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     try:
-        api = JablotronRS485TerminalAPI(hass, config_entry.data)
         device_registry = await hass.helpers.device_registry.async_get_registry()
         
-        devices = await api.getDevices(ATTR_DEVICE_TYPE_SWITCH)
+        devices = []
+        for i in range(1, config_entry.data.get(CONF_PGCOUNT) + 1):
+            devices.append(i)
+
         for i in devices:
             try:
                 async_add_devices(
-                    [JablotronRS485Switch(api, i)],
+                    [JablotronRS485Switch(i, config_entry.data)],
                     update_before_add=True,
                 )
                 device_registry.async_get_or_create(
@@ -74,10 +90,9 @@ def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:
 class JablotronRS485Switch(SwitchEntity):
     """Define a Jablotron Switch."""
 
-    def __init__(self, api, device_id):
+    def __init__(self, device_id, config):
         """Initialize a Jablotron Switch."""
         self._lock = asyncio.Lock()
-        self._api = api
         self._device_id = str(device_id)
         self._name = "PG" + str(device_id)
         self._mac = None
@@ -85,9 +100,49 @@ class JablotronRS485Switch(SwitchEntity):
         self._hs_color = [0, 0]
         self._state = False
         self._supported_features = self._determine_features()
+        self._config = config
+        self._telnet = Telnet(self._config.get(CONF_HOST), self._config.get(CONF_PORT))
         self._logger = logging.getLogger(
             ("%s:%s:<%s>") % (__name__, self.__class__.__name__, self._device_id)
         )
+        self._thread = threading.Thread(target=self._updater, args=())
+        self._thread.start()
+
+    def _updater(self):
+        while True:
+            try:
+                line = self._telnet.read_until(b"\n", timeout = 0.01)
+                msg = line.decode("utf-8").replace("\n", "").strip()
+                splitted = msg.split(" ")
+                if (splitted[0] == OBJ_PG and int(splitted[1]) == int(self._device_id)):
+                    if (splitted[2] == "ON" and self._state != True):
+                        self._state = True
+                        self.async_schedule_update_ha_state(True)
+                    elif (splitted[2] == "OFF" and self._state != False):
+                        self._state = False
+                        self.async_schedule_update_ha_state(True)
+            except EOFError as e:
+                print(e)
+                self._telnet = Telnet(self._config.get(CONF_HOST), self._config.get(CONF_PORT))
+            except Exception as e:
+                print(e)
+
+    async def _request(self, command, _object, index):
+        try:
+            self._telnet.write(bytes(self._config.get(CONF_PIN)+" "+command+" "+str(index)+"\n",'UTF-8'))
+        except Exception as e:
+            self._logger.error("Error while executing telnet query:")
+            self._logger.error(e)
+            return None
+    
+    async def setPGState(self, index, state):
+        if (state):
+            return (await self._request(CMD_PGON, OBJ_PG, index))
+        else:
+            return (await self._request(CMD_PGOFF, OBJ_PG, index))
+    
+    async def getPGState(self, index):
+        return (await self._request(CMD_PGSTATE, OBJ_PG, index))
 
     def _determine_features(self):
         """Get features supported by the device."""
@@ -99,7 +154,7 @@ class JablotronRS485Switch(SwitchEntity):
             await self._lock.acquire()
             self._logger.info("On")
             if not self._state:
-                await self._api.setPGState(self._device_id, True)
+                await self.setPGState(self._device_id, True)
                 self._state = True
             self.async_schedule_update_ha_state(True)
         finally:
@@ -111,7 +166,7 @@ class JablotronRS485Switch(SwitchEntity):
             await self._lock.acquire()
             self._logger.info("Off")
             self._state = False
-            await self._api.setPGState(self._device_id, False)    
+            await self.setPGState(self._device_id, False)    
             self.async_schedule_update_ha_state(True)
         finally:
             self._lock.release()
@@ -123,7 +178,7 @@ class JablotronRS485Switch(SwitchEntity):
             self._device_id,
         )
 
-        self._state = await self._api.getPGState(self._device_id)
+        await self.getPGState(self._device_id)
 
     @property
     def device_info(self):
